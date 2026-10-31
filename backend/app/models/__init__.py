@@ -5,6 +5,12 @@ from app.models.customer import Customer
 from app.models.order import Order, OrderStatus
 from app.models.delivery import Delivery, DeliveryStatus
 from app.models.recording import Recording, QualityStatus
+from app.models.transfer import (
+    TransferJob,
+    TransferJobStatus,
+    FileTransfer,
+    FileTransferStatus,
+)
 
 __all__ = [
     "Base",
@@ -18,4 +24,8 @@ __all__ = [
     "DeliveryStatus",
     "Recording",
     "QualityStatus",
+    "TransferJob",
+    "TransferJobStatus",
+    "FileTransfer",
+    "FileTransferStatus",
 ]

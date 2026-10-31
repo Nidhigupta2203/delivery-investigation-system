@@ -22,6 +22,16 @@ from app.schemas.delivery import (
     DeliveryStatusUpdate,
     DeliveryResponse,
 )
+from app.schemas.manifest import (
+    ManifestItemCreate,
+    ManifestCreate,
+    ManifestRecordingResponse,
+    ManifestResponse,
+)
+from app.schemas.transfer import (
+    FileTransferResponse,
+    TransferJobResponse,
+)
 
 __all__ = [
     "OrganizationBase",
@@ -40,4 +50,10 @@ __all__ = [
     "DeliveryCreate",
     "DeliveryStatusUpdate",
     "DeliveryResponse",
+    "ManifestItemCreate",
+    "ManifestCreate",
+    "ManifestRecordingResponse",
+    "ManifestResponse",
+    "FileTransferResponse",
+    "TransferJobResponse",
 ]

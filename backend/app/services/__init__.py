@@ -3,6 +3,8 @@ from app.services import (
     customer_service,
     order_service,
     delivery_service,
+    manifest_service,
+    transfer_service,
 )
 
 __all__ = [
@@ -10,4 +12,6 @@ __all__ = [
     "customer_service",
     "order_service",
     "delivery_service",
+    "manifest_service",
+    "transfer_service",
 ]

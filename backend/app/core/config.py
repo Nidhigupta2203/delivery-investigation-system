@@ -26,6 +26,14 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3000",
     ]
 
+    # S3 / MinIO Object Storage settings
+    S3_ENDPOINT_URL: str = "http://localhost:9000"
+    S3_ACCESS_KEY: str = "minioadmin"
+    S3_SECRET_KEY: str = "minioadmin"
+    S3_REGION: str = "us-east-1"
+    S3_SOURCE_BUCKET: str = "source-bucket"
+    S3_CUSTOMER_BUCKET: str = "customer-bucket"
+
     model_config = SettingsConfigDict(
         env_file=(".env", "../.env"),
         env_file_encoding="utf-8",

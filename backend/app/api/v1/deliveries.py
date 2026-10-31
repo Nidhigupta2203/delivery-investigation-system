@@ -1,6 +1,6 @@
 from typing import List, Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -10,9 +10,19 @@ from app.schemas.delivery import (
     DeliveryResponse,
     DeliveryStatusUpdate,
 )
-from app.services import delivery_service
+from app.schemas.manifest import (
+    ManifestCreate,
+    ManifestResponse,
+)
+from app.schemas.transfer import (
+    TransferJobResponse,
+)
+from app.services import delivery_service, manifest_service, transfer_service
 
 router = APIRouter()
+
+
+# --- Standard Delivery CRUD ---
 
 
 @router.post(
@@ -80,3 +90,94 @@ def update_delivery_status(
         delivery_id=delivery_id,
         data=data,
     )
+
+
+# --- Manifest APIs ---
+
+
+@router.post(
+    "/{delivery_id}/manifest",
+    response_model=ManifestResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register delivery manifest",
+)
+def register_manifest(
+    delivery_id: UUID,
+    data: ManifestCreate,
+    db: Session = Depends(get_db),
+):
+    """Register or replace recording items in a delivery manifest."""
+    return manifest_service.register_manifest(
+        db=db,
+        delivery_id=delivery_id,
+        data=data,
+    )
+
+
+@router.get(
+    "/{delivery_id}/manifest",
+    response_model=ManifestResponse,
+    summary="Inspect delivery manifest",
+)
+def get_manifest(
+    delivery_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """Inspect the recorded manifest files, checksums, and quality status."""
+    return manifest_service.get_manifest(
+        db=db,
+        delivery_id=delivery_id,
+    )
+
+
+# --- File Transfer & Background Processing APIs ---
+
+
+@router.post(
+    "/{delivery_id}/transfer",
+    response_model=TransferJobResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Start delivery file transfer",
+)
+def start_file_transfer(
+    delivery_id: UUID,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    """Start the background file transfer job for a delivery with SHA-256 checksum verification."""
+    job = transfer_service.start_transfer(db=db, delivery_id=delivery_id)
+    background_tasks.add_task(transfer_service.process_transfer_job, job.id)
+    return job
+
+
+@router.get(
+    "/{delivery_id}/transfer-status",
+    response_model=TransferJobResponse,
+    summary="Get transfer progress and status",
+)
+def get_transfer_status(
+    delivery_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """Retrieve transfer progress, percentages, and individual file outcomes."""
+    return transfer_service.get_transfer_status(
+        db=db,
+        delivery_id=delivery_id,
+    )
+
+
+@router.post(
+    "/{delivery_id}/retry-transfer",
+    response_model=TransferJobResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Retry failed file transfers",
+)
+def retry_file_transfer(
+    delivery_id: UUID,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    """Idempotently retry failed file transfers without duplicate fulfillment of completed files."""
+    job = transfer_service.retry_transfer(db=db, delivery_id=delivery_id)
+    background_tasks.add_task(transfer_service.process_transfer_job, job.id)
+    return job
