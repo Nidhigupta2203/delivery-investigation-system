@@ -330,3 +330,114 @@ MinIO runs locally via Docker Compose:
 
 
 
+
+
+---
+
+## Frontend Setup (Phase 2 — 1 November 2026)
+
+The `frontend/` directory contains a React + TypeScript + Vite application.
+
+### Tech Stack
+
+| Tool | Version | Purpose |
+|---|---|---|
+| React | 19 | UI library |
+| TypeScript | 7 (strict) | Type safety |
+| Vite | 8 | Build tool & dev server |
+| TanStack Router | 1.x | Client-side routing |
+| TanStack Query | 5.x | Server-state caching & mutations |
+| Tailwind CSS | 4 | Utility-first styling |
+| Axios | 1.x | HTTP client |
+
+### Environment Variables
+
+```dotenv
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+Copy from example:
+```powershell
+Copy-Item frontend\.env.example frontend\.env
+```
+
+### Install Dependencies
+
+```powershell
+cd frontend
+pnpm install
+```
+
+### Start Development Server
+
+```powershell
+pnpm dev
+```
+
+Open [http://localhost:5173](http://localhost:5173).
+
+### Production Build
+
+```powershell
+pnpm build
+```
+
+### TypeScript Check Only
+
+```powershell
+pnpm exec tsc --noEmit
+```
+
+---
+
+## Running the Complete Application
+
+Open **three terminals** from the project root:
+
+**Terminal 1 — Infrastructure (once):**
+```powershell
+docker compose up -d
+```
+
+**Terminal 2 — Backend API:**
+```powershell
+cd backend
+uv run uvicorn app.main:app --reload --port 8000
+```
+
+**Terminal 3 — Frontend:**
+```powershell
+cd frontend
+pnpm dev
+```
+
+Then open [http://localhost:5173](http://localhost:5173).
+
+---
+
+## Development Status
+
+**Current Phase:** React Frontend Foundation Implemented (1 November 2026).
+- [x] Docker Compose PostgreSQL setup with health checks.
+- [x] MinIO S3-compatible local object storage with persistent data.
+- [x] `backend/` structured into modular packages (`core`, `models`, `schemas`, `services`, `api`).
+- [x] SQLAlchemy 2.0 declarative models with UUID keys, timestamps, and foreign key relations.
+- [x] Alembic migration engine applied to PostgreSQL (`transfer_jobs` and `file_transfers`).
+- [x] FastAPI application running with `/`, `/health`, and `/docs`.
+- [x] Organization & Customer CRUD APIs.
+- [x] Order management APIs with status transitions.
+- [x] Delivery management APIs with acceptance/rejection validation.
+- [x] Recording manifest registration and inspection APIs.
+- [x] Background worker for file transfers with on-the-fly SHA-256 checksum validation.
+- [x] Progress tracking (percentage, transferred files, transferred bytes).
+- [x] Idempotent safe retries without duplicate fulfillment.
+- [x] 50 automated Pytest tests passing (100% pass rate).
+- [x] React + Vite + TypeScript frontend with TanStack Router/Query + Tailwind CSS.
+- [x] Dashboard with live stats from backend.
+- [x] Organizations, Customers, Orders, Deliveries list + create pages.
+- [x] Delivery detail page with manifest view, transfer progress, and retry.
+- [x] Centralized Axios API client with VITE_API_BASE_URL env var.
+- [x] TypeScript strict mode — production build passes with 0 errors.
+- [ ] Delivery comparison & diff viewer API.
+- [ ] Customer acceptance/rejection UI workflow.
+- [ ] Video playback & sensor data visualization.
