@@ -126,13 +126,16 @@ class StorageService:
             return False, "", 0, f"Failed streaming source object: {str(exc)}"
 
         # 4. Checksum verification against manifest
-        if expected_checksum and actual_checksum.lower() != expected_checksum.lower():
-            return (
-                False,
-                actual_checksum,
-                total_size,
-                f"Checksum mismatch: expected '{expected_checksum}', calculated '{actual_checksum}'.",
-            )
+        if expected_checksum:
+            # Normalize expected checksum: strip whitespace and compare case‑insensitively
+            normalized_expected = expected_checksum.strip().lower()
+            if actual_checksum.lower() != normalized_expected:
+                return (
+                    False,
+                    actual_checksum,
+                    total_size,
+                    f"Checksum mismatch: expected '{expected_checksum}', calculated '{actual_checksum}'.",
+                )
 
         # 5. Upload verified data to target destination
         try:

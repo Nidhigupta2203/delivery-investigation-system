@@ -11,15 +11,27 @@ export const apiClient = axios.create({
 
 /** Extract a human-readable error message from an Axios error. */
 export function extractErrorMessage(error: unknown): string {
-  if (axios.isAxiosError(error)) {
-    const axiosErr = error as AxiosError<{ detail: string }>
-    const detail = axiosErr.response?.data?.detail
-    if (detail) return detail
-    if (axiosErr.response?.status === 404) return 'Resource not found.'
-    if (axiosErr.response?.status === 409) return 'A conflict occurred (duplicate entry).'
-    if (axiosErr.response?.status === 400) return 'Invalid request.'
-    if (axiosErr.message) return axiosErr.message
+  const err = error as any;
+
+  const detail = err?.response?.data?.detail ?? err?.response?.data?.message;
+
+  if (Array.isArray(detail)) {
+    return detail
+      .map((item) => {
+        const loc = Array.isArray(item.loc) ? item.loc.join(" → ") : "";
+
+        return `${loc}: ${item.msg ?? "Validation error"}`;
+      })
+      .join("\n");
   }
-  if (error instanceof Error) return error.message
-  return 'An unexpected error occurred.'
+
+  if (typeof detail === "string") {
+    return detail;
+  }
+
+  if (err?.message) {
+    return err.message;
+  }
+
+  return "Something went wrong.";
 }

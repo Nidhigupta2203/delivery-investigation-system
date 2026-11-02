@@ -23,20 +23,24 @@ export function ManifestForm({ deliveryId }: { deliveryId: string }) {
   const [sourceLocation, setSourceLocation] = useState('');
   const [targetLocation, setTargetLocation] = useState('');
 
-  const emptyRecording: ManifestItemCreate = {
-    recording_id: '',
-    file_name: '',
-    file_path: undefined,
-    source_key: undefined,
-    target_key: undefined,
-    file_size_bytes: 0,
-    checksum_sha256: '',
-    duration_seconds: undefined,
-    metadata_json: undefined,
-  };
-  const [recordings, setRecordings] = useState<ManifestItemCreate[]>([emptyRecording]);
+const createEmptyRecording = (): ManifestItemCreate => ({
+  recording_id: "",
+  file_name: "",
+  file_path: undefined,
+  source_key: undefined,
+  target_key: undefined,
+  file_size_bytes: 0,
+  checksum_sha256: "",
+  duration_seconds: undefined,
+  metadata_json: undefined,
+});
+  
+  const [recordings, setRecordings] = useState<ManifestItemCreate[]>([
+    createEmptyRecording(),
+  ]);
 
-  const addRecording = () => setRecordings((prev) => [...prev, emptyRecording]);
+  const addRecording = () =>
+    setRecordings((prev) => [...prev, createEmptyRecording()]);
   const removeRecording = (idx: number) =>
     setRecordings((prev) => prev.filter((_r, i) => i !== idx));
 

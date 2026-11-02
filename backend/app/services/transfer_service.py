@@ -79,7 +79,7 @@ def start_transfer(db: Session, delivery_id: UUID) -> TransferJob:
             transfer_job_id=job.id,
             recording_id=recording.id,
             source_bucket=source_bucket,
-            source_key=recording.file_path,
+            source_key=recording.file_path.lstrip('/'),
             target_bucket=target_bucket,
             target_key=f"deliveries/{delivery.delivery_number}/{recording.file_name}",
             file_size_bytes=recording.file_size_bytes,
