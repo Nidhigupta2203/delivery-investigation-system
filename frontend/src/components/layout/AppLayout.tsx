@@ -8,11 +8,12 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { to: '/',              label: 'Dashboard',     icon: '🏠' },
-  { to: '/organizations', label: 'Organizations', icon: '🏢' },
-  { to: '/customers',     label: 'Customers',     icon: '👤' },
-  { to: '/orders',        label: 'Orders',        icon: '📋' },
-  { to: '/deliveries',    label: 'Deliveries',    icon: '📦' },
+  { to: '/',                   label: 'Dashboard',     icon: '🏠' },
+  { to: '/organizations',      label: 'Organizations', icon: '🏢' },
+  { to: '/customers',          label: 'Customers',     icon: '👤' },
+  { to: '/orders',             label: 'Orders',        icon: '📋' },
+  { to: '/deliveries',         label: 'Deliveries',    icon: '📦' },
+  { to: '/deliveries/compare', label: 'Comparison',    icon: '⚖️' },
 ]
 
 export function AppLayout({ children }: { children: ReactNode }) {

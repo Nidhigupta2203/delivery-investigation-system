@@ -79,9 +79,14 @@ export function DeliveriesPage() {
           <h2 className="text-2xl font-bold text-gray-900">Deliveries</h2>
           <p className="text-sm text-gray-500 mt-1">Manage delivery batches and file transfers</p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Cancel' : '+ New Delivery'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Link to="/deliveries/compare">
+            <Button variant="secondary">⚖️ Compare Deliveries</Button>
+          </Link>
+          <Button onClick={() => setShowForm(!showForm)}>
+            {showForm ? 'Cancel' : '+ New Delivery'}
+          </Button>
+        </div>
       </div>
 
       {showForm && (

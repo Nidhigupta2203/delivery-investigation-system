@@ -7,6 +7,6 @@ requires-python = ">=3.13"
 [tool.uv]
 
 
-[[tool.uv.workspace]]
+[tool.uv.workspace]
 members = ["backend"]
 

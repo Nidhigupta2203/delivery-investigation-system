@@ -206,6 +206,59 @@ export interface TransferJob {
   file_transfers: FileTransfer[]
 }
 
+// ── Comparison ────────────────────────────────────────────────────────────────
+
+export type ComparisonDiffType = 'ADDED' | 'REMOVED' | 'CHANGED' | 'UNCHANGED'
+
+export interface ComparisonRecordingDetail {
+  id: UUID
+  recording_id: string
+  file_name: string
+  file_path: string
+  file_size_bytes: number
+  checksum_sha256: string | null
+  duration_seconds: number | null
+  quality_status: QualityStatus
+  metadata_json: Record<string, unknown> | null
+}
+
+export interface DeliverySummary {
+  id: UUID
+  order_id: UUID
+  delivery_number: string
+  status: DeliveryStatus
+  total_recordings: number
+  total_bytes: number
+}
+
+export interface ComparisonSummary {
+  total_base_recordings: number
+  total_target_recordings: number
+  added_count: number
+  removed_count: number
+  changed_count: number
+  unchanged_count: number
+  checksum_mismatches_count: number
+  quality_status_changes_count: number
+  size_delta_bytes: number
+}
+
+export interface DeliveryComparisonItem {
+  recording_id: string
+  file_name: string
+  diff_type: ComparisonDiffType
+  diff_reasons: string[]
+  base_recording: ComparisonRecordingDetail | null
+  target_recording: ComparisonRecordingDetail | null
+}
+
+export interface DeliveryComparisonResponse {
+  base_delivery: DeliverySummary
+  target_delivery: DeliverySummary
+  summary: ComparisonSummary
+  items: DeliveryComparisonItem[]
+}
+
 // ── API error ──────────────────────────────────────────────────────────────────
 
 export interface ApiError {

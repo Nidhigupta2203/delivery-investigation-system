@@ -186,72 +186,84 @@ def process_transfer_job(job_id: UUID, db: Session = None) -> Optional[TransferJ
 
         storage_service.ensure_default_buckets()
 
-        for ft in job.file_transfers:
-            # Idempotency / Safe retry: skip files that already succeeded
-            if ft.status == FileTransferStatus.COMPLETED:
-                continue
+        try:
+            for ft in job.file_transfers:
+                # Idempotency / Safe retry: skip files that already succeeded
+                if ft.status == FileTransferStatus.COMPLETED:
+                    continue
 
-            ft.status = FileTransferStatus.TRANSFERRING
-            db.commit()
+                ft.status = FileTransferStatus.TRANSFERRING
+                db.commit()
 
-            # Execute real S3 transfer with streaming SHA-256 checksum verification
-            success, actual_checksum, size_bytes, err = storage_service.transfer_and_verify(
-                source_bucket=ft.source_bucket,
-                source_key=ft.source_key,
-                target_bucket=ft.target_bucket,
-                target_key=ft.target_key,
-                expected_checksum=ft.expected_checksum,
-            )
+                # Execute real S3 transfer with streaming SHA-256 checksum verification
+                success, actual_checksum, size_bytes, err = storage_service.transfer_and_verify(
+                    source_bucket=ft.source_bucket,
+                    source_key=ft.source_key,
+                    target_bucket=ft.target_bucket,
+                    target_key=ft.target_key,
+                    expected_checksum=ft.expected_checksum,
+                )
 
-            ft.actual_checksum = actual_checksum
-            if success:
-                ft.status = FileTransferStatus.COMPLETED
-                ft.transferred_at = datetime.now(timezone.utc)
-                ft.error_message = None
+                ft.actual_checksum = actual_checksum
+                if success:
+                    ft.status = FileTransferStatus.COMPLETED
+                    ft.transferred_at = datetime.now(timezone.utc)
+                    ft.error_message = None
 
-                # Update associated recording quality status to PASSED
-                recording = db.get(Recording, ft.recording_id)
-                if recording:
-                    recording.quality_status = QualityStatus.PASSED
-                    recording.checksum_sha256 = actual_checksum
-                    if size_bytes > 0:
-                        recording.file_size_bytes = size_bytes
+                    # Update associated recording quality status to PASSED
+                    recording = db.get(Recording, ft.recording_id)
+                    if recording:
+                        recording.quality_status = QualityStatus.PASSED
+                        recording.checksum_sha256 = actual_checksum
+                        if size_bytes > 0:
+                            recording.file_size_bytes = size_bytes
+                else:
+                    ft.status = FileTransferStatus.FAILED
+                    ft.error_message = err
+
+                    # Mark recording quality status to FAILED
+                    recording = db.get(Recording, ft.recording_id)
+                    if recording:
+                        recording.quality_status = QualityStatus.FAILED
+
+                # Atomically update transferred counts on the master job
+                job.transferred_files = sum(
+                    1 for f in job.file_transfers if f.status == FileTransferStatus.COMPLETED
+                )
+                job.transferred_bytes = sum(
+                    f.file_size_bytes for f in job.file_transfers if f.status == FileTransferStatus.COMPLETED
+                )
+                db.commit()
+
+            # Evaluate final job state
+            all_completed = all(f.status == FileTransferStatus.COMPLETED for f in job.file_transfers)
+            delivery = db.get(Delivery, job.delivery_id)
+
+            if all_completed:
+                job.status = TransferJobStatus.COMPLETED
+                job.completed_at = datetime.now(timezone.utc)
+                job.error_message = None
+                if delivery:
+                    delivery.status = DeliveryStatus.TRANSFERRED
             else:
-                ft.status = FileTransferStatus.FAILED
-                ft.error_message = err
+                job.status = TransferJobStatus.FAILED
+                failed_count = sum(1 for f in job.file_transfers if f.status == FileTransferStatus.FAILED)
+                job.error_message = f"{failed_count} file(s) failed checksum verification or transfer."
 
-                # Mark recording quality status to FAILED
-                recording = db.get(Recording, ft.recording_id)
-                if recording:
-                    recording.quality_status = QualityStatus.FAILED
-
-            # Atomically update transferred counts on the master job
-            job.transferred_files = sum(
-                1 for f in job.file_transfers if f.status == FileTransferStatus.COMPLETED
-            )
-            job.transferred_bytes = sum(
-                f.file_size_bytes for f in job.file_transfers if f.status == FileTransferStatus.COMPLETED
-            )
             db.commit()
+            db.refresh(job)
+            return job
 
-        # Evaluate final job state
-        all_completed = all(f.status == FileTransferStatus.COMPLETED for f in job.file_transfers)
-        delivery = db.get(Delivery, job.delivery_id)
-
-        if all_completed:
-            job.status = TransferJobStatus.COMPLETED
-            job.completed_at = datetime.now(timezone.utc)
-            job.error_message = None
-            if delivery:
-                delivery.status = DeliveryStatus.TRANSFERRED
-        else:
+        except Exception as exc:
             job.status = TransferJobStatus.FAILED
-            failed_count = sum(1 for f in job.file_transfers if f.status == FileTransferStatus.FAILED)
-            job.error_message = f"{failed_count} file(s) failed checksum verification or transfer."
-
-        db.commit()
-        db.refresh(job)
-        return job
+            job.error_message = f"Transfer failed with error: {str(exc)}"
+            # Mark any in-flight file transfer as failed
+            for ft in job.file_transfers:
+                if ft.status == FileTransferStatus.TRANSFERRING:
+                    ft.status = FileTransferStatus.FAILED
+                    ft.error_message = f"Interrupted: {str(exc)}"
+            db.commit()
+            return job
 
     finally:
         if should_close_db:
@@ -278,6 +290,42 @@ def poll_and_process_pending_jobs(db: Session = None) -> int:
             process_transfer_job(job_id=job_id, db=db)
 
         return len(pending_job_ids)
+    finally:
+        if should_close_db:
+            db.close()
+
+
+def recover_stale_transfer_jobs(db: Session = None) -> int:
+    """Recover transfer jobs stuck in IN_PROGRESS (e.g. from a prior worker crash or shutdown).
+
+    Marks them FAILED so they can be reviewed and retried safely.
+    """
+    should_close_db = False
+    if db is None:
+        db = SessionLocal()
+        should_close_db = True
+
+    try:
+        stale_jobs = list(
+            db.scalars(
+                select(TransferJob)
+                .where(TransferJob.status == TransferJobStatus.IN_PROGRESS)
+                .options(selectinload(TransferJob.file_transfers))
+            ).all()
+        )
+
+        for job in stale_jobs:
+            job.status = TransferJobStatus.FAILED
+            job.error_message = "Worker process interrupted while transfer was in progress. Retry available."
+            for ft in job.file_transfers:
+                if ft.status == FileTransferStatus.TRANSFERRING:
+                    ft.status = FileTransferStatus.FAILED
+                    ft.error_message = "Transfer interrupted by worker restart."
+
+        if stale_jobs:
+            db.commit()
+
+        return len(stale_jobs)
     finally:
         if should_close_db:
             db.close()

@@ -1,4 +1,11 @@
-import type { DeliveryStatus, FileTransferStatus, OrderStatus, QualityStatus, TransferJobStatus } from '../../types/api'
+import type {
+  ComparisonDiffType,
+  DeliveryStatus,
+  FileTransferStatus,
+  OrderStatus,
+  QualityStatus,
+  TransferJobStatus,
+} from '../../types/api'
 
 type BadgeVariant = 'gray' | 'blue' | 'green' | 'yellow' | 'red' | 'purple' | 'indigo'
 
@@ -78,4 +85,14 @@ export function QualityStatusBadge({ status }: { status: QualityStatus }) {
     FAILED:         'red',
   }
   return <Badge label={status.replace('_', ' ')} variant={map[status]} />
+}
+
+export function ComparisonDiffTypeBadge({ diffType }: { diffType: ComparisonDiffType }) {
+  const map: Record<ComparisonDiffType, BadgeVariant> = {
+    ADDED:     'green',
+    REMOVED:   'red',
+    CHANGED:   'yellow',
+    UNCHANGED: 'gray',
+  }
+  return <Badge label={diffType} variant={map[diffType]} />
 }

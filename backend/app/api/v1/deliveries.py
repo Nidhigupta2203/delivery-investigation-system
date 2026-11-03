@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.delivery import DeliveryStatus
+from app.schemas.comparison import DeliveryComparisonResponse
 from app.schemas.delivery import (
     DeliveryCreate,
     DeliveryResponse,
@@ -17,7 +18,12 @@ from app.schemas.manifest import (
 from app.schemas.transfer import (
     TransferJobResponse,
 )
-from app.services import delivery_service, manifest_service, transfer_service
+from app.services import (
+    comparison_service,
+    delivery_service,
+    manifest_service,
+    transfer_service,
+)
 
 router = APIRouter()
 
@@ -181,3 +187,24 @@ def retry_file_transfer(
     job = transfer_service.retry_transfer(db=db, delivery_id=delivery_id)
     background_tasks.add_task(transfer_service.process_transfer_job, job.id)
     return job
+
+
+# --- Delivery Comparison APIs ---
+
+
+@router.get(
+    "/{delivery_id}/compare/{target_delivery_id}",
+    response_model=DeliveryComparisonResponse,
+    summary="Compare two deliveries",
+)
+def compare_deliveries(
+    delivery_id: UUID,
+    target_delivery_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """Compare recordings between two deliveries to detect added, removed, changed, and unchanged recordings."""
+    return comparison_service.compare_deliveries(
+        db=db,
+        base_delivery_id=delivery_id,
+        target_delivery_id=target_delivery_id,
+    )

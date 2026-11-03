@@ -29,3 +29,11 @@ api_router.include_router(
     prefix="/deliveries",
     tags=["Deliveries"],
 )
+
+# Include recordings router
+from app.api.v1 import recordings
+api_router.include_router(
+    recordings.router,
+    prefix="/recordings",
+    tags=["Recordings"],
+)

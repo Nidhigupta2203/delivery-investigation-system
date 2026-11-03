@@ -11,6 +11,7 @@ import { CustomersPage }      from '../pages/CustomersPage'
 import { OrdersPage }         from '../pages/OrdersPage'
 import { DeliveriesPage }     from '../pages/DeliveriesPage'
 import { DeliveryDetailPage } from '../pages/DeliveryDetailPage'
+import { DeliveryComparisonPage } from '../pages/DeliveryComparisonPage'
 
 // Root route wraps all routes inside AppLayout
 const rootRoute = createRootRoute({
@@ -51,6 +52,12 @@ const deliveriesRoute = createRoute({
   component: DeliveriesPage,
 })
 
+const deliveryComparisonRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/deliveries/compare',
+  component: DeliveryComparisonPage,
+})
+
 const deliveryDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/deliveries/$deliveryId',
@@ -63,6 +70,7 @@ const routeTree = rootRoute.addChildren([
   customersRoute,
   ordersRoute,
   deliveriesRoute,
+  deliveryComparisonRoute,
   deliveryDetailRoute,
 ])
 

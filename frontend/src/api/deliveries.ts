@@ -1,5 +1,6 @@
 import type {
   Delivery,
+  DeliveryComparisonResponse,
   DeliveryCreate,
   DeliveryStatus,
   DeliveryStatusUpdate,
@@ -21,6 +22,10 @@ export const deliveriesApi = {
 
   updateStatus: (id: string, data: DeliveryStatusUpdate) =>
     apiClient.patch<Delivery>(`/deliveries/${id}/status`, data).then((r) => r.data),
+
+  // Comparison
+  compare: (baseId: string, targetId: string) =>
+    apiClient.get<DeliveryComparisonResponse>(`/deliveries/${baseId}/compare/${targetId}`).then((r) => r.data),
 
   // Manifest
   registerManifest: (id: string, data: ManifestCreate) =>

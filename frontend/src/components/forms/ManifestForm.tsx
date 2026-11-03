@@ -52,7 +52,8 @@ const createEmptyRecording = (): ManifestItemCreate => ({
     setRecordings((prev) => {
       const copy = [...prev];
       if (field === 'file_size_bytes') {
-        copy[idx][field] = Number(value) ?? 0;
+        const parsed = Number(value);
+        copy[idx][field] = Number.isFinite(parsed) ? parsed : 0;
       } else if (field === 'duration_seconds') {
         copy[idx][field] = value ? Number(value) : undefined;
       } else if (field === 'metadata_json') {

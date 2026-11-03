@@ -5,6 +5,7 @@ from app.services import (
     delivery_service,
     manifest_service,
     transfer_service,
+    comparison_service,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "delivery_service",
     "manifest_service",
     "transfer_service",
+    "comparison_service",
 ]

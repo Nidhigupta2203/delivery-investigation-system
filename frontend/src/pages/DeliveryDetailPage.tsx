@@ -13,6 +13,7 @@ import {
 } from '../components/ui/StatusBadge'
 import { LoadingState } from '../components/ui/Spinner'
 import { ManifestForm } from '../components/forms/ManifestForm'
+import { CustomerReviewSection } from '../components/delivery/CustomerReviewSection'
 import { ErrorMessage } from '../components/ui/ErrorMessage'
 import { EmptyState } from '../components/ui/EmptyState'
 import { extractErrorMessage } from '../api/client'
@@ -139,6 +140,11 @@ export function DeliveryDetailPage() {
         </div>
 
         <div className="flex gap-2">
+          <Link to="/deliveries/compare" search={{ baseId: delivery.id }}>
+            <Button variant="secondary">
+              ⚖️ Compare
+            </Button>
+          </Link>
           {canStartTransfer && (
             <Button onClick={() => startTransfer.mutate()} loading={startTransfer.isPending}>
               ▶ Start Transfer
@@ -159,6 +165,9 @@ export function DeliveryDetailPage() {
       {retryTransfer.error && (
         <ErrorMessage message={extractErrorMessage(retryTransfer.error)} />
       )}
+
+      {/* Customer Review Section */}
+      <CustomerReviewSection delivery={delivery} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Delivery info */}
