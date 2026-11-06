@@ -51,20 +51,23 @@ const createEmptyRecording = (): ManifestItemCreate => ({
   ) => {
     setRecordings((prev) => {
       const copy = [...prev];
+      const record = copy[idx];
+      const updated: typeof record = { ...record };
       if (field === 'file_size_bytes') {
         const parsed = Number(value);
-        copy[idx][field] = Number.isFinite(parsed) ? parsed : 0;
+        updated[field] = Number.isFinite(parsed) ? parsed : 0;
       } else if (field === 'duration_seconds') {
-        copy[idx][field] = value ? Number(value) : undefined;
+        updated[field] = value ? Number(value) : undefined;
       } else if (field === 'metadata_json') {
         try {
-          copy[idx][field] = value ? JSON.parse(value) : undefined;
+          updated[field] = value ? JSON.parse(value) : undefined;
         } catch {
-          copy[idx][field] = undefined;
+          updated[field] = undefined;
         }
       } else {
-        copy[idx][field] = value || undefined;
+        updated[field] = value || undefined;
       }
+      copy[idx] = updated;
       return copy;
     });
   };
